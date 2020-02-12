@@ -9,5 +9,5 @@ urlpatterns = [path('about/', views.about, name='about'), #rango/about/ yapınca
                 path('register/', views.register, name='register'), #chp9
                 path('login/', views.user_login, name='login'),
                 path('restricted/', views.restricted, name='restricted'),
-
+                path('logout/', views.user_logout, name='logout'),
                 ]

@@ -9,7 +9,8 @@ from rango.forms import PageForm #chp7
 from django.urls import reverse #chp7
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
-
+from django.contrib.auth import logout
+from django.contrib.auth import authenticate, login, logout
 
 
 def index(request):
@@ -58,7 +59,7 @@ def show_category(request, category_name_slug): #chp6! below this line.
 
     return render(request, 'rango/category.html', context=context_dict)
 
-
+@login_required #chp 9
 def add_category(request): #chp7
     form = CategoryForm()
     # A HTTP POST?
@@ -75,7 +76,7 @@ def add_category(request): #chp7
     return render(request, 'rango/add_category.html', {'form': form})
 
 
-
+@login_required #chp 9exercise
 def add_page(request, category_name_slug):
     try:
         category = Category.objects.get(slug=category_name_slug)
@@ -144,4 +145,8 @@ def user_login(request): #chp 9
         return render(request, 'rango/login.html')
 @login_required
 def restricted(request):
-    return HttpResponse("Since you're logged in, you can see this text!")
+    return render(request, 'rango/restricted.html')
+@login_required
+def user_logout(request): # Since we know the user is logged in, we can now just log them out.
+    logout(request) # Take the user back to the homepage.
+    return redirect(reverse('rango:index'))
