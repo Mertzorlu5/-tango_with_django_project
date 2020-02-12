@@ -1,3 +1,5 @@
+from rango.forms import UserForm, UserProfileForm
+from django.contrib.auth import authenticate, login
 from rango.models import Page
 from django.shortcuts import render
 from rango.models import Category  #chp6
@@ -6,6 +8,10 @@ from django.shortcuts import redirect #chp7
 from rango.forms import PageForm #chp7
 from django.urls import reverse #chp7
 from django.http import HttpResponse
+from django.contrib.auth.decorators import login_required
+
+
+
 def index(request):
 
 
@@ -93,3 +99,49 @@ def add_page(request, category_name_slug):
             print(form.errors)
     context_dict = {'form': form, 'category': category}
     return render(request, 'rango/add_page.html', context=context_dict)
+def register(request): #A boolean value for telling the template 3 # whether the registration was successful. 4 # Set to False initially. Code changes value to 5 # True when registration succeeds.
+    registered = False  # If it's a HTTP POST, we're interested in processing form data.
+    if request.method == 'POST':  # Attempt to grab information from the raw form information. 11 # Note that we make use of both UserForm and UserProfileForm. 12 #
+        user_form = UserForm(request.POST)
+        profile_form = UserProfileForm(request.POST)  # If the two forms are valid... 16 if user_form.is_valid() and profile_form.is_valid(): 17 # Save the user's form data to the database. 18 user = user_form.save() 19 20 # Now we hash the password with the set_password method. 21 # Once hashed, we can update the user object. 22 user.set_password(user.password) 23 user.save() 24 25 # Now sort out the UserProfile instance. 26 # Since we need to set the user attribute ourselves, 27 # we set commit=False. This delays saving the model
+        if user_form.is_valid() and profile_form.is_valid():
+            user = user_form.save()
+            user.set_password(user.password)
+            user.save()
+            profile = profile_form.save(commit=False)
+            profile.user = user
+            if 'picture' in request.FILES:
+
+                profile.picture = request.FILES['picture']
+            profile.save()
+            registered = True
+        else:
+            print(user_form.errors, profile_form.errors)
+    else:
+        user_form = UserForm()
+        profile_form = UserProfileForm()
+
+    return render(request,'rango/register.html',context = {'user_form': user_form,'profile_form': profile_form,'registered': registered})
+
+
+def user_login(request): #chp 9
+    if request.method == 'POST': # Gather the username and password provided by the user. # This information is obtained from the login form. # We use request.POST.get('<variable>') as opposed # to request.POST['<variable>'], because the # request.POST.get('<variable>') returns None if the # value does not exist, while request.POST['<variable>'] # will raise a KeyError exception.
+        username = request.POST.get('username')
+
+        password = request.POST.get('password')
+
+        user = authenticate(username=username, password=password)
+        if user:
+            if user.is_active:
+                login(request, user)
+                return redirect(reverse('rango:index'))
+            else:  # An inactive account was used - no logging in!
+                return HttpResponse("Your Rango account is disabled.")
+        else:  # Bad login details were provided. So we can't log the user in.
+            print(f"Invalid login details: {username}, {password}")
+            return HttpResponse("Invalid login details supplied.")
+    else:  # No context variables to pass to the template system, hence the # blank dictionary object...
+        return render(request, 'rango/login.html')
+@login_required
+def restricted(request):
+    return HttpResponse("Since you're logged in, you can see this text!")
