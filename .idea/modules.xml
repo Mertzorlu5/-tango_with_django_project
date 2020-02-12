@@ -2,7 +2,11 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+<<<<<<< HEAD
       <module fileurl="file://$PROJECT_DIR$/.idea/tango_with_django_project.iml" filepath="$PROJECT_DIR$/.idea/tango_with_django_project.iml" />
+=======
+      <module fileurl="file://$PROJECT_DIR$/.idea/rango.iml" filepath="$PROJECT_DIR$/.idea/rango.iml" />
+>>>>>>> fad8876a24577f03ce171f1a0faa83d8ab6c7321
     </modules>
   </component>
 </project>
