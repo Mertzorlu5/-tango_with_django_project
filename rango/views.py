@@ -12,6 +12,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from django.contrib.auth import authenticate, login, logout
 
+from datetime import datetime
 
 def index(request):
 
@@ -27,18 +28,20 @@ def index(request):
     context_dict['categories'] = category_list
     context_dict['pages']=page_list #chp6 exercise
 
+    visitor_cookie_handler(request)
+    #context_dict['visits'] = request.session['visits']
 
-    # Return a rendered response to send to the client.
-    # We make use of the shortcut function to make our lives easier.
-    # Note that the first parameter is the template we wish to use.
-    #render sends it back
-    return render(request, 'rango/index.html', context=context_dict)
+    response = render(request, 'rango/index.html', context=context_dict)
+
+    return response
 
 
 def about(request):
     context_dict={}#chp8
+    visitor_cookie_handler(request) #not sure chp 10
+    context_dict['visits'] = request.session['visits']
 
-    return render(request, 'rango/about.html')
+    return render(request, 'rango/about.html',context=context_dict) #add context dic here as well.
 def show_category(request, category_name_slug): #chp6! below this line.
     # Create a context dictionary which we can pass
     # to the template rendering engine.
@@ -143,10 +146,32 @@ def user_login(request): #chp 9
             return HttpResponse("Invalid login details supplied.")
     else:  # No context variables to pass to the template system, hence the # blank dictionary object...
         return render(request, 'rango/login.html')
-@login_required
+@login_required #sadece bir altındaki fcuntion icindir login olmayanlar göremez restricted() functionunu
 def restricted(request):
     return render(request, 'rango/restricted.html')
 @login_required
 def user_logout(request): # Since we know the user is logged in, we can now just log them out.
     logout(request) # Take the user back to the homepage.
     return redirect(reverse('rango:index'))
+def visitor_cookie_handler(request): # Get the number of visits to the site. # We use the COOKIES.get() function to obtain the visits cookie. # If the cookie exists, the value returned is casted to an integer. # If the cookie doesn't exist, then the default value of 1 is used.
+    visits = int(get_server_side_cookie(request, 'visits', '1'))
+    last_visit_cookie = get_server_side_cookie(request,
+                                               'last_visit',
+                                               str(datetime.now()))
+    last_visit_time = datetime.strptime(last_visit_cookie[:-7], '%Y-%m-%d %H:%M:%S')
+# If it's been more than a day since the last visit...
+    if (datetime.now() - last_visit_time).days > 0:
+        visits = visits + 1 # Update the last visit cookie now that we have updated the count
+        request.session['last_visit'] = str(datetime.now())
+    else: # Set the last visit cookie
+        request.session['last_visit'] = last_visit_cookie
+
+    request.session['visits'] = visits
+
+def get_server_side_cookie(request, cookie, default_val=None):
+    val = request.session.get(cookie)
+    if not val:
+        val = default_val
+    return val
+
+
